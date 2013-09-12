@@ -34,19 +34,10 @@ class Lavadisk:
 
         volumes_to_backup = []
         for volume in ebs_volumes:
-            for tag in volume.tags:
-                ## Check that the current tag is of use to use
-                if re.match(self.tag_pattern , tag):
-
-                    # Check if this volume even has backups
-                    if tag == 'backups-enable':
-                       if volume.tags[tag] == 'false':
-                           break
-                       if volume.tags[tag] == 'true':
-                           check_this_volume = True
-                    
-            
-            check_this_volume = (self.config.config['defaults']['enabled'])
+            if "backups-enabled" in volume.tags.keys():
+                check_this_volume = True if volume.tags["backups-enabled"] == 'true' else False
+            else:
+                check_this_volume = self.config.config['defaults']['enabled']
 
             if check_this_volume:
                 if self._check_backup_age(volume):
