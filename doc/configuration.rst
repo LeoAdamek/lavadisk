@@ -8,16 +8,16 @@ The default backup options are specified via the configuration file, but can be 
 Command Line Flags
 ------------------
 
-`--help`
+``--help``
     Show the help.
 
-`--region`
+``--region``
     Specify a region to connect to. Overrides config file.
 
-`--dry-run`
+``--dry-run``
     Do a "dry-run" output the snapshots that would be created and deleted, but don't actually do it.
 
-`--verbose`
+``--verbose``
     Run verbosely, output lists of volumes and snapshots and show what's happening.
 
 Unimplimented Flags
@@ -25,8 +25,8 @@ Unimplimented Flags
 
 The following options will appear but do not currently function.
 
-* `--aws-key-id` Specify the AWS access key.
-* `--aws-key-secret` AWS Secret.
+* ``--aws-key-id`` Specify the AWS access key.
+* ``--aws-key-secret`` AWS Secret.
 
 
 Configuration File
@@ -34,20 +34,33 @@ Configuration File
 
 The configuration file is written in json and expects the following:
 
-* `region` : AWS Region to connect to.
-* `aws_key_id` : AWS Access key
-* `aws_key_secret` : Aws Key Secret phrase
+``region``
+    AWS Region to connect to.
 
-A `defaults` object should be present and accepts the following.
 
-* `enabled` : A `true` / `false` for enabling backups by default
-* `backups_interval` : (See: Time Interval) Regularity of backups
-* `backups_format` : A standard `date` format, with the addition of `%V` for Volume Name
-* `backups_retain` : (See: Time Interval) Retention period for backups
+``aws_key_id``
+    AWS Access key
+
+``aws_key_secret``
+    AWS Key Secret phrase
+
+A ``defaults`` object should be present and accepts the following.
+
+``enabled``
+    A ``true`` / ``false`` for enabling backups by default
+
+``backups_interval``
+    (:doc:`Time Interval </time_interval>`) Regularity of backups
+
+``backups_format``
+   A standard date format, with the addition of ``%V`` for Volume Name
+
+``backups_retain``
+    (:doc:`Time Interval </time_interval>`) Retention period for backups
 
 Example Configuration
 ^^^^^^^^^^^^^^^^^^^^^
-Here is a useful example configuration, you can find it in `/example/configuration.example.json`::
+Here is a useful example configuration, you can find it in :file:`/example/configuration.example.json`::
   
   {
       "region" : "eu-west-1",
