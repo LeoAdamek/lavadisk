@@ -51,8 +51,22 @@ class Configuration(dict):
                             type=unicode , nargs='?',
                             help="AWS Acsss Key Secret to use.")
 
+        parser.add_argument('--dry-run' , dest='dry_run' , action='store_const' ,
+                            const=True , default=False ,
+                            help=""" Perform a dry run. Don't actually do operations. """)
+
+        
+        parser.add_argument('--verbose' , dest='verbose' , action='store_const' ,
+                            const=True , default=False ,
+                            help=""" Show verbose output to stdout """)
+
 
         arguments = parser.parse_args()
+
+        if arguments.verbose:
+            print "Running Verbosely."
+            print "Using arguments: %s" % arguments
+        
 
         if not arguments.config_file:
             arguments.config_file = 'configuration.json'
@@ -72,6 +86,10 @@ class Configuration(dict):
             raise SyntaxError("The configuration file contains a syntax error.")
 
         self.config = config
+
+        if self.arguments.verbose:
+            print "Got Following Config from %s : \n %s" % (self.arguments.config_file , config)
+        
         return config
     
 

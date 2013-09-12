@@ -18,19 +18,33 @@ class Lavadisk:
 
     def __init__(self):
         self.config = Configuration()
+        self.verbose = self.config.arguments.verbose
         
         self.run_backups()
 
     def run_backups(self):
         """ Run the backups! """
+        if self.config.arguments.region:
+            region = self.config.arguments.region
+        else:
+            region = self.config.config['region']
+
+        if self.verbose:
+            print "Connecting to AWS Region: %s" % region
 
         self.connection = ec2.connect_to_region(
-            self.config.config['region'],
+            region,
             aws_access_key_id = self.config.config['aws_key_id'],
             aws_secret_access_key = self.config.config['aws_key_secret']
         )
         
         ebs_volumes = self.connection.get_all_volumes()
+
+
+        if self.verbose:
+            print( "Got Following Volumes: " )
+            for volume in ebs_volumes: print(" - %s " % volume.id )
+        
 
         volumes_to_backup = []
         for volume in ebs_volumes:
@@ -40,8 +54,16 @@ class Lavadisk:
                 check_this_volume = self.config.config['defaults']['enabled']
 
             if check_this_volume:
+                if self.verbose:
+                    print("Checking Volume: %s" % volume.id)
+
                 if self._check_backup_age(volume):
                     volumes_to_backup.append(volume)
+
+
+        if self.verbose:
+            print("Volumes to snapshot: ")
+            for v in volumes_to_backup: print(" - %s " % v.id)
 
         created_snapshots = []
         for volume in volumes_to_backup:
@@ -58,10 +80,14 @@ class Lavadisk:
             snapshot_name = datetime.now().strftime(snapshot_format.replace("%V" , volume_name))
 
             ## DO the backup!
-            created_snapshots.append( volume.create_snapshot(snapshot_name) )
+            if not self.config.arguments.dry_run:
+                created_snapshots.append( volume.create_snapshot(snapshot_name) )
+            else:
+                print( "DRY: Would've created %s for %s" % (snapshot_name , volume.id))
+            
 
             ## Remove old snapshots
-            self._purge_old_backups(volume)
+            self._purge_old_snapshots(volume)
         
                             
     def _check_backup_age(self, volume):
@@ -131,7 +157,11 @@ class Lavadisk:
             snapshot_age = datetime.now() - self._parse_date(snapshot.start_time)
             if snapshot_age > snapshot_retention_period:
                 # Delete this old snapshot
-                snapshot.delete()
+                if not self.config.arguments.dry_run:
+                    snapshot.delete()
+
+                if self.verbose:
+                    print("Deleting old snapshot: %s" % snapshot.id)
     
 
     def _parse_date(self, date_string):
