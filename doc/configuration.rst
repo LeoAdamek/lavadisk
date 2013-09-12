@@ -8,9 +8,17 @@ The default backup options are specified via the configuration file, but can be 
 Command Line Flags
 ------------------
 
-* `--help` , `-h` Show the help.
+`--help`
+    Show the help.
 
-* `--region` Specify a region to connect to. Overrides config file.
+`--region`
+    Specify a region to connect to. Overrides config file.
+
+`--dry-run`
+    Do a "dry-run" output the snapshots that would be created and deleted, but don't actually do it.
+
+`--verbose`
+    Run verbosely, output lists of volumes and snapshots and show what's happening.
 
 Unimplimented Flags
 ^^^^^^^^^^^^^^^^^^
@@ -36,6 +44,25 @@ A `defaults` object should be present and accepts the following.
 * `backups_interval` : (See: Time Interval) Regularity of backups
 * `backups_format` : A standard `date` format, with the addition of `%V` for Volume Name
 * `backups_retain` : (See: Time Interval) Retention period for backups
+
+Example Configuration
+^^^^^^^^^^^^^^^^^^^^^
+Here is a useful example configuration, you can find it in `/example/configuration.example.json`::
+  
+  {
+      "region" : "eu-west-1",
+      "aws_key_id" : "YOUR_AWS_KEY",
+      "aws_secret_key" : "YOUR_AWS_ACCESS_KEY",
+      "defaults" : {
+          "enabled" : true,
+          "backups_interval" : "0w 1d 0h",
+          "backups_retain" : "4w 0d 0h",
+          "backups_format" : "%V__%Y-%m-%d_%H:%M:%S"
+      }
+  }
+
+
+
 
 Volume Tags
 -----------
