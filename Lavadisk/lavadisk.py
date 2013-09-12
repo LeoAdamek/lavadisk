@@ -81,7 +81,7 @@ class Lavadisk:
         
         newest_snapshot = datetime.min
         for snapshot in snapshots:
-            snapshot_date = self._parse_date(snapshot.start_date)
+            snapshot_date = self._parse_date(snapshot.start_time)
             # Take the most recent snapshot.
             if snapshot_date > newest_snapshot:
                 newest_snapshot = snapshot_date
@@ -128,7 +128,7 @@ class Lavadisk:
         snapshot_retention_period = self._parse_time_interval(snapshot_retention_period)
         
         for snapshot in snapshots:
-            snapshot_age = datetime.now() - self._parse_date(snapshot.start_date)
+            snapshot_age = datetime.now() - self._parse_date(snapshot.start_time)
             if snapshot_age > snapshot_retention_period:
                 # Delete this old snapshot
                 snapshot.delete()
