@@ -12,7 +12,9 @@ except ImportError:
 
 class Lavadisk:
 
-    tag_pattern = r'^backups-(.*)$'
+    tag_pattern = re.compile('^backups-(.*)$')
+    
+    time_interval_pattern = re.compile('^(?P<weeks>[0-9]+)w (?P<days>[0-9]+)d (?P<hours>[0-9]+)h$')
 
     def __init__(self):
         self.config = Configuration()
@@ -47,9 +49,28 @@ class Lavadisk:
             check_this_volume = (self.config.config['defaults']['enabled'])
 
             if check_this_volume:
-                self._check_backup_age(volume)
+                if self._check_backup_age(volume):
+                    volumes_to_backup.append(volume)
 
+        created_snapshots = []
+        for volume in volumes_to_backup:
+            if "backups-format" in volume.tags.keys():
+                snapshot_format = volume.tags["backups-format"]
+            else:
+                snapshot_format = self.config.config["defaults"]["backups_format"]
+            
+            if "Name" not in volume.tags.keys():
+                volume_name = volume.id
+            else:
+                volume_name = volume.tags["Name"]
 
+            snapshot_name = datetime.now().strftime(snapshot_format.replace("%V" , volume_name))
+
+            ## DO the backup!
+            created_snapshots.append( volume.create_snapshot(snapshot_name) )
+
+            ## Remove old snapshots
+            self._purge_old_backups(volume)
         
                             
     def _check_backup_age(self, volume):
@@ -67,37 +88,63 @@ class Lavadisk:
         if not snapshots:
             return True
         
-        newest_snapshot = 0
+        newest_snapshot = datetime.min
         for snapshot in snapshots:
-            snapshot_date = datetime.strptime(snapshot.start_time , "%Y-%m-%dT%H:%M:%S.%z")
-            if "backups-interval" in volume.tags.keys():
-                max_allowed_age = volume.tags["backups-interval"]
-            else:
-                max_allowed_age = self.config.config["defaults"]["backups_interval"]
+            snapshot_date = self._parse_date(snapshot.start_date)
+            # Take the most recent snapshot.
+            if snapshot_date > newest_snapshot:
+                newest_snapshot = snapshot_date
 
-            self._parse_time_interval(max_allowed_age)
+        if "backups-interval" in volume.tags.keys():
+            max_allowed_age = volume.tags["backups-interval"]
+        else:
+            max_allowed_age = self.config.config["defaults"]["backups_interval"]
+
+        max_timedelta = self._parse_time_interval(max_allowed_age)
+
+        if newest_snapshot < ( datetime.utcnow() - max_timedelta):
+            return True
+
+        return False
+
 
     def _parse_time_interval(self, time_interval):
         """ 
         Parse a time interval string in a human format:
-        e.g. 1y 2m 1w 3d 18h
+        Only accepts weeks, days and hours as months and years vary in length.
+        e.g. 1w 3d 18h
         """
+
+        match = self.time_interval_pattern.match(time_interval)
         
-        # Regex for the interval
-        pattern = r"((\d+){y,m,w,d,h})+"
+        if match is None:
+            raise ValueError("Invalid time_interval: %s" % time_interval)
 
-        if not pattern.match(time_interval):
-            raise ValueError("Got a bad time interval: %s" % time_interval)
+        values = dict((elapsed , int(match.group(elapsed) ) ) for elapsed in ['weeks','days','hours'])
+
+        delta = timedelta(days=values['weeks'] * 7 + values['days'] , hours=values['hours'])
+        return delta
+
+    def _purge_old_snapshots(self, volume):
+        snapshots = volume.snapshots()
         
+        if "backups-retain" in volume.tags.keys():
+            snapshot_retention_period = volume.tags["backups-retain"]
+        else:
+            snapshot_retention_period = self.config.config["defaults"]["backups_retain"]
+
+
+        snapshot_retention_period = self._parse_time_interval(snapshot_retention_period)
         
-                    
-            
+        for snapshot in snapshots:
+            snapshot_age = datetime.now() - self._parse_date(snapshot.start_date)
+            if snapshot_age > snapshot_retention_period:
+                # Delete this old snapshot
+                snapshot.delete()
+    
 
-                        
-
-
-        
-
+    def _parse_date(self, date_string):
+        return datetime.strptime(date_string , "%Y-%m-%dT%H:%M:%S.000Z")        
 
 def run():
     lavadisk = Lavadisk()
