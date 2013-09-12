@@ -10,6 +10,7 @@ Configuration File(s) and stuff...
 import sys
 import re
 import os
+import json
 from argparse import ArgumentParser
 
 #
@@ -22,7 +23,8 @@ class Configuration(dict):
     
 
     def __init__(self, *args, **kwargs):
-        pass
+        self.parse_command_line()
+        self.load_config_file()
 
     def parse_command_line(self):
         parser = ArgumentParser(
@@ -34,7 +36,7 @@ class Configuration(dict):
 
         parser.add_argument('--config-file',
                             type=unicode , nargs='?',
-                            help="Path to configuration file")
+                            help="Path to configuration file (default: configuration.json)")
 
 
         parser.add_argument('--region',
@@ -58,8 +60,21 @@ class Configuration(dict):
         self.arguments = arguments
         return arguments # Return it because why not?
 
-    def parse_config_file(self):
-        pass
+    def load_config_file(self):
+        """ Loads the configuration file """
+        if not self.arguments.config_file:
+            raise ValueError("There is no configuration file to load")
+
+        try:
+            config = json.loads(open(self.arguments.config_file).read())
+        except ValueError:
+            # Maybe this isn't such a good idea.
+            raise SyntaxError("The configuration file contains a syntax error.")
+
+        self.config = config
+        return config
+    
+
 
 
 # Test code
