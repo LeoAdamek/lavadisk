@@ -63,11 +63,6 @@ class Configuration(dict):
 
         arguments = parser.parse_args()
 
-        if arguments.verbose:
-            print "Running Verbosely."
-            print "Using arguments: %s" % arguments
-        
-
         if not arguments.config_file:
             arguments.config_file = 'configuration.json'
 

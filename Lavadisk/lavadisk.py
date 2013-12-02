@@ -1,7 +1,10 @@
+#!/usr/bin/env python
+
 """
 Lavadisk: Keeps your systems running, and your backups HOT!
 """
 import re
+from logging import Logger , Formatter , StreamHandler , FileHandler , INFO , WARNING
 from datetime import datetime, timedelta
 from configuration import Configuration
 
@@ -18,8 +21,29 @@ class Lavadisk:
 
     def __init__(self):
         self.config = Configuration()
-        self.verbose = self.config.arguments.verbose
-        
+
+        self.logger = Logger( "Lavadisk" )
+
+        stdout_handler = StreamHandler()
+        logfile_handler = FileHandler(self.config.config['logfile'])
+
+        if self.config.arguments.verbose:
+            self.logger.setLevel(INFO)
+            stdout_handler.setLevel(INFO)
+            logfile_handler.setLevel(INFO)
+        else:
+            self.logger.setLevel(WARNING)
+            stdout_handler.setLevel(WARNING)
+            logfile_handler.setLevel(WARNING)
+            
+
+        formatter = Formatter("[%(asctime)s %(levelname)s] %(message)s")
+        stdout_handler.setFormatter(formatter)
+        logfile_handler.setFormatter(formatter)
+
+        self.logger.addHandler(stdout_handler)
+        self.logger.addHandler(logfile_handler)
+
         self.run_backups()
 
     def run_backups(self):
@@ -29,22 +53,19 @@ class Lavadisk:
         else:
             region = self.config.config['region']
 
-        if self.verbose:
-            print "Connecting to AWS Region: %s" % region
+        self.logger.info("Connecting to AWS Region {}".format(region))
 
         self.connection = ec2.connect_to_region(
             region,
             aws_access_key_id = self.config.config['aws_key_id'],
             aws_secret_access_key = self.config.config['aws_key_secret']
         )
+
+        self.logger.info("Checking volumes")
         
         ebs_volumes = self.connection.get_all_volumes()
 
-
-        if self.verbose:
-            print( "Got Following Volumes: " )
-            for volume in ebs_volumes: print(" - %s " % volume.id )
-        
+        self.logger.info("Got {} volumes. Checking which ones need backing up".format(len(ebs_volumes)))
 
         volumes_to_backup = []
         for volume in ebs_volumes:
@@ -54,16 +75,11 @@ class Lavadisk:
                 check_this_volume = self.config.config['defaults']['enabled']
 
             if check_this_volume:
-                if self.verbose:
-                    print("Checking Volume: %s" % volume.id)
-
                 if self._check_backup_age(volume):
                     volumes_to_backup.append(volume)
 
-
-        if self.verbose:
-            print("Volumes to snapshot: ")
-            for v in volumes_to_backup: print(" - %s " % v.id)
+        self.logger.info("Need to backup {} volumes".format( len(volumes_to_backup) ) )
+        self.logger.info("Volume IDS: {}".format( ','.join(volumes_to_backup)) )
 
         created_snapshots = []
         for volume in volumes_to_backup:
@@ -83,7 +99,7 @@ class Lavadisk:
             if not self.config.arguments.dry_run:
                 created_snapshots.append( volume.create_snapshot(snapshot_name) )
             else:
-                print( "DRY: Would've created %s for %s" % (snapshot_name , volume.id))
+                self.logger.info("(DRY RUN) Would've created snapshot: {}".format(snapshot_name))
             
 
             ## Remove old snapshots
@@ -143,6 +159,7 @@ class Lavadisk:
         return delta
 
     def _purge_old_snapshots(self, volume):
+        self.logger.info("Checking if any snapshots of {} are stale".format(volume.id))
         snapshots = volume.snapshots()
         
         if "backups-retain" in volume.tags.keys():
@@ -157,11 +174,9 @@ class Lavadisk:
             snapshot_age = datetime.now() - self._parse_date(snapshot.start_time)
             if snapshot_age > snapshot_retention_period:
                 # Delete this old snapshot
+                self.logger.info("Deleting Sanpshot: {}".format(shapshot))
                 if not self.config.arguments.dry_run:
                     snapshot.delete()
-
-                if self.verbose:
-                    print("Deleting old snapshot: %s" % snapshot.id)
     
 
     def _parse_date(self, date_string):
