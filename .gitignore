@@ -2,4 +2,4 @@ _env
 configuration.json
 __pycache__
 .#*
-*.pyc
+*.pycconfig.json

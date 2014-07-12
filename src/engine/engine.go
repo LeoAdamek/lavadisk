@@ -46,9 +46,13 @@ func New() *Engine {
 	}
 
 	// Load the config_file argument
-	config_file_location := flag.String("config-file" , "config.json", "Configuration File Location")
-	println(config_file_location)
-	eng.Config = *config.New(os.Stdin)
+	config_file , err := os.Open(*flag.String("config-file" , "config.json", "Configuration File Location"))
+
+	if err != nil {
+		panic(err)
+	}
+	
+	eng.Config = *config.New(config_file)
 	
 	return eng
 }

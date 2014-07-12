@@ -53,7 +53,7 @@ func (conf *Configuration) load() (success bool, err error) {
 		err := decoder.Decode(&m);
 
 		if err == io.EOF {
-			break 
+			break
 		} else if err != nil {
 			panic(err)
 		}
