@@ -7,5 +7,7 @@ import (
 func main () {
 
 	eng := engine.New()
-	eng.Logf("Hello World")
+	eng.Logf("[MSG] %s" , "Hello World...")
+	
+	eng.Logf(eng.Config.String())
 }

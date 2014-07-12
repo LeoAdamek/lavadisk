@@ -38,7 +38,7 @@ type Engine struct {
 //
 func New() *Engine {
 
-	eng := &Engine {
+	eng := &Engine{
 		Stdout: os.Stdout,
 		Stderr: os.Stderr,
 		Stdin: os.Stdin,
@@ -69,5 +69,5 @@ func (eng *Engine) Logf(format string, args ...interface{}) (n int, err error) {
 		return 0, nil
 	}
 
-	return fmt.Fprintf(eng.Stderr, format, args...)
+	return fmt.Fprintf(eng.Stderr, format + "\n" , args...)
 }

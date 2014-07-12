@@ -6,12 +6,8 @@ import (
 	"errors"
 )
 
-type KeyValueStore map[string]string
+type KeyValueStore map[string]interface{}
 
-type JSONMessage struct {
-	Key string
-	Value string
-}
 
 type Configuration struct {
 	Source io.Reader
@@ -30,39 +26,31 @@ func New(source io.Reader) *Configuration {
 		data: make(KeyValueStore),
 	}
 
-	// Try to load the config source
-	_ , err := conf.load()
-
-	if err != nil {
-		panic(err)
-	}
-
 	return conf
 }
 
 //
 // Load configuration file
-func (conf *Configuration) load() (success bool, err error) {
+func (conf *Configuration) load() {
+
+	var raw_data interface{}
 	
-	decoder := json.NewDecoder(conf.Source)
-
-	// Iterate over the data and decode.
-	for {
-		var m JSONMessage
-
-		err := decoder.Decode(&m);
-
-		if err == io.EOF {
-			break
-		} else if err != nil {
-			panic(err)
-		}
-
-		conf.data[m.Key] = m.Value
+	// 4kB should be enough
+	data_string := make([]byte, 0x1000)
 	
+	_ , err := conf.Source.Read(data_string)
+	
+	if err != nil {
+		panic(err)
 	}
 
-	return true, nil
+	err = json.Unmarshal(data_string, &raw_data)
+
+	if err != nil {
+		panic(err)
+	}
+	
+	conf.data = raw_data.(KeyValueStore)
 }
 
 // Set a configuration option
@@ -77,13 +65,25 @@ func (conf *Configuration) Set(key string, value string) {
 //  Get a configuration options
 //
 // key string Option to getV
-func (conf *Configuration) Get(key string) (v string, err error) {
+func (conf *Configuration) Get(key string) (v interface{}, err error) {
 	 
 	if conf.data[key] != "" {
 		return conf.data[key], nil
-
 	}
 
 	return "" , errors.New("Key " + key + " does not exist")
+}
+
+//
+// Serialization method...
+// Prints out Key-Value Pairs
+func (conf *Configuration) String() string {
+	str := ""
+
+	for k, v := range conf.data {
+		str = str + "[" + k + "]" + v.(string) + "\n"
+	}
+
+	return str
 }
 
