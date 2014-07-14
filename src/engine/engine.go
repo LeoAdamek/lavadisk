@@ -33,6 +33,9 @@ type Engine struct {
 	Stdin	 io.Reader	// Reader for Stdin
 	Logging	 bool		// Enable Loggin
 	Config   config.Configuration	// Configuration
+	startedAt time.Time     // Time when the engine was started
+	endedAt   time.Time     // Time when the engine was stopped
+	ticker    *time.Ticker   // The engine ticker
 }
 
 //
@@ -72,14 +75,16 @@ func (eng *Engine) Run() {
 	// Cerate a ticket to run at the specified tick rate
 	d, _ := time.ParseDuration("1s")
 	
-	ticker := time.NewTicker(d)
+	// Set the start time
+	eng.startedAt = time.Now()
+	eng.Logf("Strated at: %s", eng.startedAt)
+
+	eng.ticker = time.NewTicker(d)
 
 	for {
 		// Wait for a tick
-		tick := <- ticker.C
+		tick := <- eng.ticker.C
 
-		// Do a thing
-		eng.Logf("Current Time: %s" , time.Now())
 		eng.Logf("Tick: %s", tick)
 	}
 }
@@ -99,6 +104,11 @@ func (eng *Engine) waitForExit() {
 		s := <- signal_channel
 		
 		if s == os.Interrupt {
+
+			eng.ticker.Stop()			
+			eng.endedAt = time.Now()
+
+			eng.Logf("Stopped at: %s", eng.endedAt)
 			eng.Logf("Interrupted. Exiting")
 			os.Exit(0)
 		}
