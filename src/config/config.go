@@ -1,6 +1,7 @@
 package config
 
 import (
+	"time"
 	"io"
 	"encoding/json"
 	"errors"
@@ -51,6 +52,8 @@ func (conf *Configuration) load() {
 	}
 	
 	conf.data = raw_data.(KeyValueStore)
+
+	conf.deserializeDurations()
 }
 
 // Set a configuration option
@@ -87,3 +90,22 @@ func (conf *Configuration) String() string {
 	return str
 }
 
+//
+// Deserialize the Durations in the configuration data
+// Uses the time.ParseDuration method
+//
+func (conf *Configuration) deserializeDurations() {
+
+	for key, value := range conf.data {
+		duration, err := time.ParseDuration(value.(string))
+
+		// If no error was thrown parsing the value,
+		// Then it was a duration.
+		if err == nil {
+			// Replace the string with the time.Duration
+			conf.data[key] = duration
+		}
+
+	}
+
+}

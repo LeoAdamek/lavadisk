@@ -12,6 +12,8 @@ import (
 	"os"
 	"flag"
 	"config"
+	"time"
+	"os/signal"
 )
 
 //
@@ -57,10 +59,60 @@ func New() *Engine {
 	return eng
 }
 
+//
+// Run
+// Runs a main loop at a pre-defined tick-rate
+// The loop will be paused for (1/tick-rate) seconds.
+// A separate handler for OS Signals is created to handle interruption.
+func (eng *Engine) Run() {
+
+	// Spawn a goroutine to handle the OS signal for exit
+	go eng.waitForExit()
+
+	// Cerate a ticket to run at the specified tick rate
+	d, _ := time.ParseDuration("1s")
+	
+	ticker := time.NewTicker(d)
+
+	for {
+		// Wait for a tick
+		tick := <- ticker.C
+
+		// Do a thing
+		eng.Logf("Current Time: %s" , time.Now())
+		eng.Logf("Tick: %s", tick)
+	}
+}
+
+
+
+//
+// Wait for a condition to terminate execution
+// 
+func (eng *Engine) waitForExit() {
+	
+	signal_channel := make(chan os.Signal , 1)
+	signal.Notify(signal_channel, os.Interrupt)
+	
+	for {
+		
+		s := <- signal_channel
+		
+		if s == os.Interrupt {
+			eng.Logf("Interrupted. Exiting")
+			os.Exit(0)
+		}
+
+	}
+	
+}
 
 
 //
 // Log something (with formatting)
+//
+// format string Log format -- Without placeholders can be a constant string
+// args ...interface{} Things to use
 // 
 func (eng *Engine) Logf(format string, args ...interface{}) (n int, err error) {
 	
