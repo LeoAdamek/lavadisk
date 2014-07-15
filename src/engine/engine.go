@@ -85,10 +85,21 @@ func (eng *Engine) Run() {
 		// Wait for a tick
 		tick := <- eng.ticker.C
 
-		eng.Logf("Tick: %s", tick)
+		eng.operate(tick)
 	}
 }
 
+
+func (eng *Engine) operate(tick time.Time) {
+	
+	one_day , _ := time.ParseDuration("24h")
+	one_week, _ := time.ParseDuration("160h")
+
+	v := NewVolume("test-id", one_day, one_week)
+	v.CreateSnapshot()
+	
+	eng.Logf(v.String())
+}
 
 
 //
