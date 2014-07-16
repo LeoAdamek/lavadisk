@@ -1,0 +1,26 @@
+{
+        "string" : "Hello",
+        "int" : 4,
+        "float" : 3.141,
+
+        "aws" : {
+              "access_key_id" : "AAAAAA",
+              "secret_access_key" : "XXXXXX",
+              "region" : "eu-west-1"
+        },
+
+        
+        "defaults" : {
+                   "enable": true,
+                   "format" : "BACKUP_%V_%d%m%Y",
+                   "interval" : "1d",
+                   "retain" : "2w"
+        },
+
+        "ignore-volumes" : [
+
+                   "vol-12345678",
+                   "vol-87654321"
+        ]
+
+}
