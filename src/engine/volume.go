@@ -5,26 +5,6 @@ import (
 )
 
 //
-// Snapshot check status
-// Storage of snapshot status and checking for new snapshot.
-//
-
-
-//
-// Snapshot Datatype
-//
-type Snapshot struct {
-	
-	Status string
-
-	CreatedAt time.Time  // When the snapshot was created
-
-	Label string         // Snapshot Label
-	Volume *Volume       // Pointer to the volume this snapshot is of
-}
-
-
-//
 // Volume Datatype
 //
 type Volume struct {
@@ -40,8 +20,6 @@ type Volume struct {
 	Snapshots []Snapshot              // All the volume snapshots
 }
 
-type TagMap map[string]string
-
 //
 // Get the time at which the next snapshot is due
 //
@@ -50,7 +28,6 @@ func (vol *Volume) NextSnapshotAt() time.Time {
 	last_snapshot_time := vol.LastSnapshot.CreatedAt
 
 	return last_snapshot_time.Add(vol.SnapshotInterval)
-
 }
 
 //
@@ -85,7 +62,6 @@ func (vol *Volume) CreateSnapshot () {
 	vol.Snapshots = append(vol.Snapshots, *snapshot)
 	
 }
-
 
 //
 // Stringify Volume

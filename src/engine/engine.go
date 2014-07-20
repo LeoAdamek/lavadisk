@@ -19,6 +19,7 @@ import (
 //
 // Installer is an interface for objects which can
 // register event handlers for application extension
+// Currently does nothing.
 type Installer interface {
 	Install(*Engine) error
 }
